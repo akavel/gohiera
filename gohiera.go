@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"launchpad.net/goyaml"
+	"strings"
 )
 
 /*
@@ -17,6 +18,7 @@ Hiearchy can be either a []strings or a string
 
 Does not parse (or deal with):
 :logger
+:ubuntu
 */
 
 type HieraConfig struct {
@@ -61,6 +63,17 @@ func HieraFromString(config []byte) (*Hiera, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	for i, backend := range c.Backends {
+		// Force data into consistent form
+		c.Backends[i] = strings.ToLower(backend)
+
+		// Use already lowered version
+		if c.Backends[i] == "puppet" {
+			return nil, fmt.Errorf("gohiera does not handle backend: ':puppet'")
+		}
+	}
+
 	c.Hiearchy, err = singletonToArray("Hiearchy", c.RawHiearchy)
 	if err != nil {
 		return nil, err
