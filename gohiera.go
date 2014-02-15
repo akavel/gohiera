@@ -22,12 +22,13 @@ Does not parse (or deal with):
 */
 
 type HieraConfig struct {
-	RawBackends interface{} `yaml:":backends"`
-	RawHiearchy interface{} `yaml:":hierarchy"`
-	Yaml        SubConfig   `yaml:":yaml"`
-	Json        SubConfig   `yaml:":json"`
-	Backends    []string    `yaml:"-"`
-	Hiearchy    []string    `yaml:"-"`
+	RawBackends   interface{}   `yaml:":backends"`
+	RawHiearchy   interface{}   `yaml:":hierarchy"`
+	Yaml          SubConfig     `yaml:":yaml"`
+	Json          SubConfig     `yaml:":json"`
+	MergeBehavior MergeBehavior `yaml:":merge_behavior"`
+	Backends      []string      `yaml:"-"`
+	Hiearchy      []string      `yaml:"-"`
 }
 
 type SubConfig struct {
@@ -37,6 +38,14 @@ type SubConfig struct {
 type Hiera struct {
 	config HieraConfig
 }
+
+type MergeBehavior string
+
+const (
+	Native MergeBehavior = "native"
+	Deep                 = "deep"
+	Deeper               = "deeper"
+)
 
 func LoadHiera(configFile string) (*Hiera, error) {
 	contents, err := ioutil.ReadFile(configFile)
@@ -79,8 +88,25 @@ func HieraFromString(config []byte) (*Hiera, error) {
 		return nil, err
 	}
 
+	if err := validMergeBehavior(c.MergeBehavior); err != nil {
+		return nil, err
+	}
+
 	h.config = c
 	return &h, nil
+}
+
+func validMergeBehavior(behavior MergeBehavior) error {
+	switch behavior {
+	case "":
+		// Alias for Native
+	case Native:
+	case Deep:
+	case Deeper:
+	default:
+		return fmt.Errorf("%s is not a valid behavior", behavior)
+	}
+	return nil
 }
 
 // Puppet allows for some fields to be either a string or an array of strings.

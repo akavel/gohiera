@@ -5,6 +5,7 @@ import "testing"
 var PluralConfig []byte
 var SingletonConfig []byte
 var InvalidHiearchyConfig []byte
+var InvalidMergeBehavior []byte
 
 func init() {
 	// Example config from http://docs.puppetlabs.com/hiera/1/configuring.html
@@ -21,6 +22,7 @@ func init() {
   - "%{::clientcert}"
   - "%{::custom_location}"
   - common
+:merge_behavior: native
 `)
 	SingletonConfig = []byte(`
 ---
@@ -40,6 +42,17 @@ func init() {
   :datadir: /etc/puppet/hieradata
 :hierarchy: 
   - 506
+`)
+	InvalidMergeBehavior = []byte(`
+---
+:backends: yaml
+:yaml:
+  :datadir: /etc/puppet/hieradata
+:json:
+  :datadir: /etc/puppet/hieradata
+:hierarchy: 
+  - common
+:merge_behavior: foobar
 `)
 }
 
@@ -63,7 +76,7 @@ func TestInvalidHiearchyConfig(t *testing.T) {
 	_, err := HieraFromString(InvalidHiearchyConfig)
 
 	if err == nil {
-		t.Errorf("Shouldn't have been able to parse InvalidHiearchyConfig but did.")
+		t.Errorf("Failed to detect error in InvalidHiearchyConfig")
 		return
 	}
 }
@@ -81,5 +94,13 @@ func TestHieraFromStringSingle(t *testing.T) {
 
 	if len(res.config.Hiearchy) != 1 {
 		t.Errorf("Error decoding hiearchies")
+	}
+}
+
+func TestInvalidMergeBehavior(t *testing.T) {
+	res, err := HieraFromString(InvalidMergeBehavior)
+
+	if err == nil {
+		t.Errorf("Failed to detect error in InvalidMergeBehavior: '%v'", res.config.MergeBehavior)
 	}
 }
