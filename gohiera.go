@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"launchpad.net/goyaml"
+	"runtime"
 	"strings"
 )
 
@@ -75,11 +76,30 @@ func HieraFromString(config []byte) (*Hiera, error) {
 
 	for i, backend := range c.Backends {
 		// Force data into consistent form
-		c.Backends[i] = strings.ToLower(backend)
+		backend = strings.ToLower(backend)
+		c.Backends[i] = backend
 
 		// Use already lowered version
-		if c.Backends[i] != "json" && c.Backends[i] != "yaml" {
-			return nil, fmt.Errorf("gohiera does not handle backend: '%s'", c.Backends[i])
+		if backend != "json" && backend != "yaml" {
+			return nil, fmt.Errorf("gohiera does not handle backend: '%s'", backend)
+		}
+
+		// Set default backend location (if not set)
+		if backend == "json" && c.Json.Datadir == "" {
+			if runtime.GOOS == "windows" {
+				c.Json.Datadir = "%PROGRAMDATA%\\PuppetLabs\\Hiera\\var"
+			} else {
+				c.Json.Datadir = "/var/lib/hiera"
+			}
+		}
+
+		// Set default backend location (if not set)
+		if backend == "yaml" && c.Yaml.Datadir == "" {
+			if runtime.GOOS == "windows" {
+				c.Yaml.Datadir = "%PROGRAMDATA%\\PuppetLabs\\Hiera\\var"
+			} else {
+				c.Yaml.Datadir = "/var/lib/hiera"
+			}
 		}
 	}
 
