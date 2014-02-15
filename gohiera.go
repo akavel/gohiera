@@ -23,7 +23,7 @@ Does not parse (or deal with):
 :ubuntu
 */
 
-var interpolationRegexp *regexp.Regexp = regexp.MustCompile(`%{[a-zA-Z0-9_:]+}`)
+var interpolationRegexp = regexp.MustCompile(`%{[a-zA-Z0-9_:]+}`)
 
 type HieraConfig struct {
 	RawBackends   interface{}   `yaml:":backends"`
@@ -72,6 +72,29 @@ func ExpandString(str string, facts map[string]string) string {
 	})
 }
 
+func (c *HieraConfig) lookupDataStore(backend string) string {
+	var datadir string
+	// Return the defaults:
+	if runtime.GOOS == "windows" {
+		datadir = "%PROGRAMDATA%\\PuppetLabs\\Hiera\\var"
+	} else {
+		datadir = "/var/lib/hiera"
+	}
+
+	switch backend {
+	case "json":
+		if c.Json.Datadir != "" {
+			datadir = c.Json.Datadir
+		}
+	case "yaml":
+		if c.Yaml.Datadir != "" {
+			datadir = c.Yaml.Datadir
+		}
+	}
+
+	return datadir
+}
+
 func LoadHiera(configFile string) (*Hiera, error) {
 	contents, err := ioutil.ReadFile(configFile)
 
@@ -106,24 +129,6 @@ func HieraFromString(config []byte) (*Hiera, error) {
 		// Use already lowered version
 		if backend != "json" && backend != "yaml" {
 			return nil, fmt.Errorf("gohiera does not handle backend: '%s'", backend)
-		}
-
-		// Set default backend location (if not set)
-		if backend == "json" && c.Json.Datadir == "" {
-			if runtime.GOOS == "windows" {
-				c.Json.Datadir = "%PROGRAMDATA%\\PuppetLabs\\Hiera\\var"
-			} else {
-				c.Json.Datadir = "/var/lib/hiera"
-			}
-		}
-
-		// Set default backend location (if not set)
-		if backend == "yaml" && c.Yaml.Datadir == "" {
-			if runtime.GOOS == "windows" {
-				c.Yaml.Datadir = "%PROGRAMDATA%\\PuppetLabs\\Hiera\\var"
-			} else {
-				c.Yaml.Datadir = "/var/lib/hiera"
-			}
 		}
 	}
 
