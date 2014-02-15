@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"launchpad.net/goyaml"
+	"regexp"
 	"runtime"
 	"strings"
 )
@@ -21,6 +22,8 @@ Does not parse (or deal with):
 :logger
 :ubuntu
 */
+
+var interpolationRegexp *regexp.Regexp = regexp.MustCompile(`%{[a-zA-Z0-9_]+}`)
 
 type HieraConfig struct {
 	RawBackends   interface{}   `yaml:":backends"`
@@ -47,6 +50,25 @@ const (
 	Deep                 = "deep"
 	Deeper               = "deeper"
 )
+
+// Hiera can only operate in a context of an facter environment.  Even things
+// such as the Datadir to act as the root of the yaml/json files can change
+// depending upon the "facts".
+func LookupValue(key string, facts map[string]string) {
+}
+
+// Expand any cases of yaml's string interpolation:
+// e.g. "Foo %{variable}"
+func ExpandString(str string, facts map[string]string) string {
+	return interpolationRegexp.ReplaceAllStringFunc(str, func(interp string) string {
+		key := interp[2 : len(interp)-1]
+		if val, ok := facts[key]; !ok {
+			return interp
+		} else {
+			return val
+		}
+	})
+}
 
 func LoadHiera(configFile string) (*Hiera, error) {
 	contents, err := ioutil.ReadFile(configFile)
