@@ -23,7 +23,7 @@ Does not parse (or deal with):
 :ubuntu
 */
 
-var interpolationRegexp *regexp.Regexp = regexp.MustCompile(`%{[a-zA-Z0-9_]+}`)
+var interpolationRegexp *regexp.Regexp = regexp.MustCompile(`%{[a-zA-Z0-9_:]+}`)
 
 type HieraConfig struct {
 	RawBackends   interface{}   `yaml:":backends"`
@@ -62,6 +62,8 @@ func LookupValue(key string, facts map[string]string) {
 func ExpandString(str string, facts map[string]string) string {
 	return interpolationRegexp.ReplaceAllStringFunc(str, func(interp string) string {
 		key := interp[2 : len(interp)-1]
+		// A key can start with "::" implying it is a facter fact
+		key = strings.TrimPrefix(key, "::")
 		if val, ok := facts[key]; !ok {
 			return interp
 		} else {
