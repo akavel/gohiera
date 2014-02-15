@@ -2,14 +2,8 @@ package gohiera
 
 import "testing"
 
-var PluralConfig []byte
-var SingletonConfig []byte
-var InvalidHiearchyConfig []byte
-var InvalidMergeBehavior []byte
-
-func init() {
-	// Example config from http://docs.puppetlabs.com/hiera/1/configuring.html
-	PluralConfig = []byte(`
+func TestHieraFromStringPlural(t *testing.T) {
+	config := []byte(`
 ---
 :backends:
   - yaml
@@ -24,40 +18,7 @@ func init() {
   - common
 :merge_behavior: native
 `)
-	SingletonConfig = []byte(`
----
-:backends: yaml
-:yaml:
-  :datadir: /etc/puppet/hieradata
-:json:
-  :datadir: /etc/puppet/hieradata
-:hierarchy: common
-`)
-	InvalidHiearchyConfig = []byte(`
----
-:backends: yaml
-:yaml:
-  :datadir: /etc/puppet/hieradata
-:json:
-  :datadir: /etc/puppet/hieradata
-:hierarchy: 
-  - 506
-`)
-	InvalidMergeBehavior = []byte(`
----
-:backends: yaml
-:yaml:
-  :datadir: /etc/puppet/hieradata
-:json:
-  :datadir: /etc/puppet/hieradata
-:hierarchy: 
-  - common
-:merge_behavior: foobar
-`)
-}
-
-func TestHieraFromStringPlural(t *testing.T) {
-	res, err := HieraFromString(PluralConfig)
+	res, err := HieraFromString(config)
 
 	if err != nil {
 		t.Errorf("Error reading hiera config: %v", err)
@@ -73,7 +34,17 @@ func TestHieraFromStringPlural(t *testing.T) {
 }
 
 func TestInvalidHiearchyConfig(t *testing.T) {
-	_, err := HieraFromString(InvalidHiearchyConfig)
+	config := []byte(`
+---
+:backends: yaml
+:yaml:
+  :datadir: /etc/puppet/hieradata
+:json:
+  :datadir: /etc/puppet/hieradata
+:hierarchy:
+  - 506
+`)
+	_, err := HieraFromString(config)
 
 	if err == nil {
 		t.Errorf("Failed to detect error in InvalidHiearchyConfig")
@@ -82,7 +53,16 @@ func TestInvalidHiearchyConfig(t *testing.T) {
 }
 
 func TestHieraFromStringSingle(t *testing.T) {
-	res, err := HieraFromString(SingletonConfig)
+	config := []byte(`
+---
+:backends: yaml
+:yaml:
+  :datadir: /etc/puppet/hieradata
+:json:
+  :datadir: /etc/puppet/hieradata
+:hierarchy: common
+`)
+	res, err := HieraFromString(config)
 
 	if err != nil {
 		t.Errorf("Error reading hiera config: %v", err)
@@ -98,7 +78,18 @@ func TestHieraFromStringSingle(t *testing.T) {
 }
 
 func TestInvalidMergeBehavior(t *testing.T) {
-	res, err := HieraFromString(InvalidMergeBehavior)
+	config := []byte(`
+---
+:backends: yaml
+:yaml:
+  :datadir: /etc/puppet/hieradata
+:json:
+  :datadir: /etc/puppet/hieradata
+:hierarchy:
+  - common
+:merge_behavior: foobar
+`)
+	res, err := HieraFromString(config)
 
 	if err == nil {
 		t.Errorf("Failed to detect error in InvalidMergeBehavior: '%v'", res.config.MergeBehavior)
