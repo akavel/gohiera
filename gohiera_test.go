@@ -77,6 +77,24 @@ func TestHieraFromStringSingle(t *testing.T) {
 	}
 }
 
+func TestInvalidBackend(t *testing.T) {
+	config := []byte(`
+---
+:backends: foobar
+:yaml:
+  :datadir: /etc/puppet/hieradata
+:json:
+  :datadir: /etc/puppet/hieradata
+:hierarchy:
+  - common
+`)
+	res, err := HieraFromString(config)
+
+	if err == nil {
+		t.Errorf("Failed to detect error in InvalidBackend: '%v'", res.config.Backends[0])
+	}
+}
+
 func TestInvalidMergeBehavior(t *testing.T) {
 	config := []byte(`
 ---

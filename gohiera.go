@@ -78,8 +78,8 @@ func HieraFromString(config []byte) (*Hiera, error) {
 		c.Backends[i] = strings.ToLower(backend)
 
 		// Use already lowered version
-		if c.Backends[i] == "puppet" {
-			return nil, fmt.Errorf("gohiera does not handle backend: ':puppet'")
+		if c.Backends[i] != "json" && c.Backends[i] != "yaml" {
+			return nil, fmt.Errorf("gohiera does not handle backend: '%s'", c.Backends[i])
 		}
 	}
 
