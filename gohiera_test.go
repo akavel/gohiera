@@ -117,20 +117,20 @@ func TestInvalidMergeBehavior(t *testing.T) {
 func TestExpandString(t *testing.T) {
 	facts := map[string]string{"environment": "production"}
 
-	start, finish := "/%{environment}/", "/production/"
-	if out := ExpandString(start, facts); out != finish {
-		t.Errorf("Invalid expansion: '%s' expected '%s'", out, finish)
+	tests := [][]string{
+		[]string{"/%{environment}/", "/production/"},
+		[]string{"/%{missingkey}/%{environment}/", "/%{missingkey}/production/"},
+		[]string{"/%{::missingkey}/%{::environment}/", "/%{::missingkey}/production/"},
+		[]string{"%{}", "%{}"},
+		[]string{"Test %{ a partial match", "Test %{ a partial match"},
+		[]string{"A normal String", "A normal String"},
+		[]string{"", ""},
 	}
 
-	// TODO: get rid of the repitition here
-	start, finish = "/%{missingkey}/%{environment}/", "/%{missingkey}/production/"
-	if out := ExpandString(start, facts); out != finish {
-		t.Errorf("Invalid expansion: '%s' expected '%s'", out, finish)
-	}
-
-	// TODO: get rid of the repitition here
-	start, finish = "/%{::missingkey}/%{::environment}/", "/%{::missingkey}/production/"
-	if out := ExpandString(start, facts); out != finish {
-		t.Errorf("Invalid expansion: '%s' expected '%s'", out, finish)
+	for _, test := range tests {
+		start, finish := test[0], test[1]
+		if out := ExpandString(start, facts); out != finish {
+			t.Errorf("Invalid expansion: '%s' expected '%s'", out, finish)
+		}
 	}
 }
